@@ -1,2 +1,2 @@
 # wikigpt
-Small example to give GTP access to some Wikipedia articles
+Small example to give GPT API access to some Wikipedia articles
