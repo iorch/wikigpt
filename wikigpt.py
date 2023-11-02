@@ -6,18 +6,18 @@ import json
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
 def get_wiki_sm():
-    uri = 'https://es.wikipedia.org/wiki/Modelo_est%C3%A1ndar_de_la_f%C3%ADsica_de_part%C3%ADculas'
-    r = request.get( uri )
+    uri = 'https://es.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=Modelo_est%C3%A1ndar_de_la_f%C3%ADsica_de_part%C3%ADculas'
+    r = requests.get( uri )
     return r.text
 
 def get_wiki_higgs():
-    uri = 'https://es.wikipedia.org/wiki/Mecanismo_de_Higgs'
-    r = request.get( uri )
+    uri = 'https://es.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=Mecanismo_de_Higgs'
+    r = requests.get( uri )
     return r.text
 
 def get_wiki_feynman_diagram():
-    uri = 'https://es.wikipedia.org/wiki/Diagrama_de_feynman'
-    r = request.get( uri )
+    uri = 'https://es.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=Diagrama_de_feynman'
+    r = requests.get( uri )
     return r.text
 
 def get_function_description():
@@ -54,30 +54,28 @@ def get_wikiGPT():
 
     function_description = get_function_description()
 
-    payload = json.dumps(
-        {
-            'model': 'gpt-3.5-turbo-16k',
-            'messages': [
-                {
-                    'role': 'system',
-                    'content': (
-                        'You are an agent expert on particle physics. You MUST always answer in LATAM Spanish.'
-                        'You are answering to physicist, and physics students in Mexico.'
-                        'You have access to Wikipedia through function calls'
-                    ) 
-                },
-                {
-                    'role': 'user',
-                    'content': (
-                        'Explicame el modelo estándard de física de partículas.'
-                    )
-                }
-            ],
-            'functions': function_description,
-            'function_call': 'auto'
-        }
-    )
-
+    data = {
+        'model': 'gpt-3.5-turbo-16k',
+        'messages': [
+            {
+                'role': 'system',
+                'content': (
+                    'You are an agent expert on particle physics. You MUST always answer in LATAM Spanish.'
+                    'You are answering to physicist, and physics students in Mexico.'
+                    'You have access to Wikipedia through function calls'
+                ) 
+            },
+            {
+                'role': 'user',
+                'content': (
+                    'Explicame el modelo estándard de física de partículas.'
+                )
+            }
+        ],
+        'functions': function_description,
+        'function_call': 'auto'
+    }
+    payload = json.dumps(data)
     headers={
         'Content-Type': 'application/json',
         'Authorization': 'Bearer {openai_api_token}'.format(openai_api_token=openai_api_key),
@@ -90,8 +88,9 @@ def get_wikiGPT():
     )
 
     response = json.loads(r.text)
+    response_message = response['choices'][0]['message']
     print(response)
-    if response['choices'][0]['message'] and response['choices'][0]['message']['function_call']:
+    if response_message and response_message['function_call']:
         available_functions = {
             'get_wiki_sm': lambda: ( str( get_wiki_sm() ) ),
             'get_wiki_higgs': lambda: ( str( get_wiki_higgs() ) ),
@@ -104,14 +103,15 @@ def get_wikiGPT():
         else:
             function_response = "Not Known"
 
-    (payload['messages']).append(
+    (data['messages']).append(
         {
             "role": "function",
             "name": function_name,
             "content": function_response,
         }
     )
-
+    payload = json.dumps(data)
+    print(payload)
     r = requests.post(
         uri,
         headers = headers,
@@ -122,6 +122,6 @@ def get_wikiGPT():
 
 
 if __name__ == "__main__":
-    wiki_respose = get_wikiGPT()
+    wiki_response = get_wikiGPT()
     print(wiki_response)
 
