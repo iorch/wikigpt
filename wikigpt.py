@@ -90,6 +90,7 @@ def get_wikiGPT():
     )
 
     response = json.loads(r.text)
+    print(response)
     if response['choices'][0]['message'] and response['choices'][0]['message']['function_call']:
         available_functions = {
             'get_wiki_sm': lambda: ( str( get_wiki_sm() ) ),
